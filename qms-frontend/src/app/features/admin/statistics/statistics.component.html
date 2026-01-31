@@ -1,0 +1,90 @@
+<div class="statistics-container">
+    <div class="header-section">
+        <h2>Thống kê & Báo cáo</h2>
+        <p-button label="Xuất Excel" icon="pi pi-file-excel" severity="success" (onClick)="exportToExcel()" [loading]="exporting"></p-button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <div class="filter-grid">
+            <div class="filter-item">
+                <label>Từ ngày</label>
+                <p-datepicker [(ngModel)]="startDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Chọn ngày bắt đầu"></p-datepicker>
+            </div>
+            <div class="filter-item">
+                <label>Đến ngày</label>
+                <p-datepicker [(ngModel)]="endDate" dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Chọn ngày kết thúc"></p-datepicker>
+            </div>
+            <div class="filter-item">
+                <label>Dịch vụ</label>
+                <p-select [options]="services" [(ngModel)]="selectedServiceId" optionLabel="serviceName" optionValue="serviceId" [showClear]="true" placeholder="Tất cả dịch vụ"></p-select>
+            </div>
+            <div class="filter-item">
+                <p-button label="Lọc dữ liệu" icon="pi pi-search" (onClick)="loadStatistics()" [loading]="loading" class="w-full"></p-button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+        <div class="stat-card blue">
+            <div class="stat-header">
+                <span class="label">Tổng lượt lấy số</span>
+                <i class="pi pi-ticket text-blue-500"></i>
+            </div>
+            <div class="value">{{summary.total}}</div>
+        </div>
+        
+        <div class="stat-card green">
+            <div class="stat-header">
+                <span class="label">Xử lý thành công</span>
+                <i class="pi pi-check-circle text-green-500"></i>
+            </div>
+            <div class="value">{{summary.done}}</div>
+            <div class="sub-value text-green-500 font-bold">{{summary.donePercent}}%</div>
+        </div>
+        
+        <div class="stat-card orange">
+            <div class="stat-header">
+                <span class="label">Bỏ lượt / Hủy</span>
+                <i class="pi pi-times-circle text-orange-500"></i>
+            </div>
+            <div class="value">{{summary.missed}}</div>
+            <div class="sub-value text-orange-500 font-bold">{{summary.missedPercent}}%</div>
+        </div>
+        
+        <div class="stat-card purple">
+            <div class="stat-header">
+                <span class="label">TG Chờ TB</span>
+                <i class="pi pi-clock text-purple-500"></i>
+            </div>
+            <div class="value">{{summary.avgWait}} phút</div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Tỷ lệ trạng thái phiếu</h3>
+            <p-chart type="doughnut" [data]="statusData" [options]="statusOptions" height="300px"></p-chart>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Xu hướng theo thời gian</h3>
+            <p-chart type="line" [data]="trendData" [options]="trendOptions" height="300px"></p-chart>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Phân bổ theo khung giờ</h3>
+            <p-chart type="bar" [data]="hourlyData" [options]="hourlyOptions" height="300px"></p-chart>
+        </div>
+        
+        <div class="chart-card">
+            <h3>Lượt lấy số theo dịch vụ</h3>
+            <p-chart type="bar" [data]="serviceData" [options]="serviceOptions" height="300px"></p-chart>
+        </div>
+    </div>
+
+</div>

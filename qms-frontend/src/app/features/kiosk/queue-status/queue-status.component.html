@@ -1,0 +1,191 @@
+<div class="kiosk-wrapper">
+  <!-- Background Pattern -->
+  <div class="kiosk-bg-pattern"></div>
+  
+  <!-- Main Container -->
+  <div class="kiosk-container">
+    <div class="kiosk-sub-header">
+      <button pButton icon="pi pi-arrow-left" label="QUAY LẠI" routerLink="/kiosk" class="p-button-text p-button-secondary"></button>
+    </div>
+
+    <main class="kiosk-main full-width-layout">
+      <div class="queue-details-panel w-full">
+        <div class="panel-header mb-4">
+          <h2><i class="pi pi-chart-bar"></i> CHI TIẾT HÀNG CHỜ HIỆN TẠI</h2>
+        </div>
+        
+        <div *ngFor="let serviceDetail of queueDetails" class="service-detail-group">
+          <div class="service-summary">
+            <h3>{{ serviceDetail.serviceName }} ({{ serviceDetail.serviceCode }})</h3>
+            <div class="stats-badges">
+              <span class="badge pending">Chờ: {{ serviceDetail.pendingCount }}</span>
+              <span class="badge completed">Xong: {{ serviceDetail.completedCount }}</span>
+              <span class="badge cancelled">Bỏ: {{ serviceDetail.cancelledCount }}</span>
+            </div>
+          </div>
+          
+          <p-table [value]="serviceDetail.rooms" styleClass="p-datatable-sm p-datatable-gridlines mb-4">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width: 15%">Mã phòng</th>
+                <th style="width: 40%">Tên phòng</th>
+                <th style="width: 15%" class="text-center">Đang chờ</th>
+                <th style="width: 15%" class="text-center">Đã xong</th>
+                <th style="width: 15%" class="text-center">Đã bỏ</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-room>
+              <tr (click)="openRoomDetail(room.roomId, room.roomCode, room.roomName)" class="clickable-row">
+                <td><strong>{{ room.roomCode }}</strong></td>
+                <td>{{ room.roomName }}</td>
+                <td class="text-center"><span class="queue-count pending">{{ room.pendingCount }}</span></td>
+                <td class="text-center"><span class="queue-count done">{{ room.completedCount }}</span></td>
+                <td class="text-center"><span class="queue-count cancelled">{{ room.cancelledCount }}</span></td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="kiosk-footer">
+      <p><i class="pi pi-info-circle"></i> Nhấn vào phòng để xem chi tiết | Trạng thái được cập nhật liên tục</p>
+    </footer>
+  </div>
+
+  <!-- Room Detail Modal -->
+  <p-dialog [(visible)]="showRoomDetail" [modal]="true" [closable]="true" 
+    [style]="{width: '900px'}" [maximizable]="true" [draggable]="false">
+    <ng-template pTemplate="header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="pi pi-building" style="font-size: 1.2rem;"></i>
+        <span>{{ selectedRoomCode }} - {{ selectedRoomName }}</span>
+      </div>
+    </ng-template>
+
+    <div class="room-detail-container">
+      <!-- Tab View for Status Filtering -->
+      <p-tabView [(activeIndex)]="selectedStatusTab" (onChange)="onStatusTabChange()">
+        <p-tabPanel header="Đang Chờ" leftIcon="pi pi-hourglass">
+          <div class="tickets-list">
+            <p-table [value]="filteredRoomTickets" [loading]="isLoadingRoom" styleClass="p-datatable-sm">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width: 15%">Số Phiếu</th>
+                  <th style="width: 15%">Loại</th>
+                  <th style="width: 20%">Trạng Thái</th>
+                  <th style="width: 20%">Thời Gian</th>
+                  <th style="width: 30%">Thao Tác</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-ticket>
+                <tr>
+                  <td><strong>{{ ticket.ticketNumber }}</strong></td>
+                  <td>{{ getPriorityLabel(ticket.priorityType) }}</td>
+                  <td>
+                    <p-tag [value]="getStatusLabel(ticket.status)" 
+                      [severity]="getStatusSeverity(ticket.status)"></p-tag>
+                  </td>
+                  <td>{{ ticket.issuedAt | date:'dd/MM HH:mm' }}</td>
+                  <td></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="5" class="text-center" style="padding: 20px;">
+                    <i class="pi pi-inbox" style="font-size: 2rem; color: #ccc; margin-right: 10px;"></i>
+                    Không có số đang chờ
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabPanel>
+
+        <p-tabPanel header="Đã Hoàn Thành" leftIcon="pi pi-check-circle">
+          <div class="tickets-list">
+            <p-table [value]="filteredRoomTickets" [loading]="isLoadingRoom" styleClass="p-datatable-sm">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width: 15%">Số Phiếu</th>
+                  <th style="width: 15%">Loại</th>
+                  <th style="width: 20%">Trạng Thái</th>
+                  <th style="width: 20%">Hoàn Thành Lúc</th>
+                  <th style="width: 30%">Thao Tác</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-ticket>
+                <tr>
+                  <td><strong>{{ ticket.ticketNumber }}</strong></td>
+                  <td>{{ getPriorityLabel(ticket.priorityType) }}</td>
+                  <td>
+                    <p-tag [value]="getStatusLabel(ticket.status)" 
+                      [severity]="getStatusSeverity(ticket.status)"></p-tag>
+                  </td>
+                  <td>{{ ticket.completedAt | date:'dd/MM HH:mm' }}</td>
+                  <td></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="5" class="text-center" style="padding: 20px;">
+                    <i class="pi pi-inbox" style="font-size: 2rem; color: #ccc; margin-right: 10px;"></i>
+                    Không có số đã hoàn thành
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabPanel>
+
+        <p-tabPanel header="Đã Bỏ" leftIcon="pi pi-times-circle">
+          <div class="tickets-list">
+            <p-table [value]="filteredRoomTickets" [loading]="isLoadingRoom" styleClass="p-datatable-sm">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width: 12%">Số Phiếu</th>
+                  <th style="width: 12%">Loại</th>
+                  <th style="width: 18%">Trạng Thái</th>
+                  <th style="width: 15%">Bỏ Lúc</th>
+                  <th style="width: 43%">Thao Tác</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-ticket>
+                <tr>
+                  <td><strong>{{ ticket.ticketNumber }}</strong></td>
+                  <td>{{ getPriorityLabel(ticket.priorityType) }}</td>
+                  <td>
+                    <p-tag [value]="getStatusLabel(ticket.status)" 
+                      [severity]="getStatusSeverity(ticket.status)"></p-tag>
+                  </td>
+                  <td>{{ ticket.calledAt | date:'dd/MM HH:mm' }}</td>
+                  <td>
+                    <button pButton type="button" icon="pi pi-reply" 
+                      label="Trả Lại Hàng Chờ"
+                      class="p-button-sm p-button-warning"
+                      (click)="returnToQueue(ticket)"></button>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="5" class="text-center" style="padding: 20px;">
+                    <i class="pi pi-inbox" style="font-size: 2rem; color: #ccc; margin-right: 10px;"></i>
+                    Không có số đã bỏ
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabPanel>
+      </p-tabView>
+    </div>
+  </p-dialog>
+
+  <!-- Confirmation Dialog -->
+  <p-confirmDialog></p-confirmDialog>
+  
+  <!-- Toast Messages -->
+  <p-toast></p-toast>
+</div>

@@ -1,0 +1,414 @@
+/* ========================================
+   TV Display Component Styles
+   Design: High-contrast, large-screen optimized
+   ======================================== */
+
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000; /* Dark background to hide gaps if scaling */
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.tv-wrapper {
+  position: absolute;
+  background: var(--main-bg, #f8fafc);
+  color: var(--main-text, var(--color-gray-900));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-origin: center center;
+  box-shadow: 0 0 50px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+
+  &[data-footer-pos="Top"] {
+    flex-direction: column-reverse;
+  }
+  
+  &[data-footer-pos="Left"] {
+    flex-direction: row-reverse;
+    .ticker-bar { height: 100% !important; .ticker-content { animation: ticker-vertical 20s linear infinite; flex-direction: column; } }
+  }
+
+  &[data-footer-pos="Right"] {
+    flex-direction: row;
+    .ticker-bar { height: 100% !important; .ticker-content { animation: ticker-vertical 20s linear infinite; flex-direction: column; } }
+  }
+}
+
+/* ========== Header ========== */
+.tv-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  padding: 0 var(--col-gap, var(--space-8));
+  background: var(--header-bg, white);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  border-bottom: 1px solid var(--color-gray-100);
+  position: relative;
+  z-index: 10;
+  color: var(--header-text, inherit);
+}
+
+.header-left, .header-right {
+  width: 50%; 
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.header-right { justify-content: flex-end; }
+
+.tv-logo {
+  max-height: 85%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.brand-text {
+  font-size: var(--hospital-name-fs, 1.8vw);
+  font-weight: 900;
+  color: var(--header-text, var(--color-primary-700));
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.datetime-display.centered {
+  flex: 1;
+  text-align: center;
+  
+  .connection-warning {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: #ef4444;
+    font-weight: 800;
+    font-size: 2.5vw;
+    animation: pulse 2s infinite;
+
+    i { font-size: 3vw; }
+  }
+  
+  .time {
+    font-size: var(--datetime-fs, 3.5vw); 
+    font-weight: 800;
+    color: var(--header-text, var(--color-primary-600));
+    line-height: 1.1;
+  }
+  
+  .date {
+    font-size: calc(var(--datetime-fs, 3.5vw) / 3);
+    font-weight: 700;
+    color: var(--header-text, var(--color-gray-500));
+    opacity: 0.8;
+    text-transform: capitalize;
+  }
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.connection-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--inactive-color, #ef4444);
+  &.connected { background: var(--signal-color, #10b981); }
+}
+
+/* ========== Main Content ========== */
+.tv-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--row-gap) var(--col-gap); /* Add spacing to prevent touching Header, Footer, and Ads */
+  overflow: hidden;
+}
+
+.rooms-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rooms-grid {
+  display: grid;
+  gap: var(--row-gap, var(--space-6)) var(--col-gap, var(--space-6));
+  width: 100%;
+  height: 100%;
+  align-content: stretch;
+  align-items: stretch; /* Ensure items stretch to fill row height */
+
+  .empty-slot {
+    background: transparent;
+    height: 100%;
+  }
+
+  &.layout-horizontal {
+    .room-panel {
+      flex-direction: row;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-10);
+      height: 100%;
+    }
+
+    .room-minimal-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-align: left;
+
+      .room-name {
+        margin-bottom: 0;
+        font-size: var(--room-name-fs, 3rem);
+      }
+
+      .current-number {
+        font-size: var(--ticket-number-fs, 6rem);
+      }
+    }
+  }
+}
+
+.room-panel {
+  background: var(--main-bg, white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  color: var(--main-text, inherit);
+
+  &.active {
+    box-shadow: var(--shadow-xl);
+    border-color: var(--active-color, var(--color-primary-200));
+  }
+
+  &.blinking {
+    animation: room-highlight 1.5s ease-in-out infinite;
+    border-color: #f59e0b;
+    box-shadow: 0 0 40px rgba(245, 158, 11, 0.4);
+  }
+}
+
+@keyframes room-highlight {
+  0% { background-color: var(--main-bg, white); }
+  50% { background-color: #fef3c7; }
+  100% { background-color: var(--main-bg, white); }
+}
+
+.room-minimal-content {
+  text-align: center;
+  width: 100%;
+
+  .room-name {
+    font-size: var(--room-name-fs, 2.5rem);
+    font-weight: 800;
+    color: var(--main-text, var(--color-gray-600));
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+  }
+
+  .current-number {
+    font-size: var(--ticket-number-fs, 10rem); 
+    font-weight: 900;
+    color: var(--active-color, var(--color-primary-600));
+    line-height: 1;
+    
+    &.empty {
+      color: var(--inactive-color, var(--color-gray-200));
+      font-size: calc(var(--ticket-number-fs, 10rem) * 0.6);
+    }
+  }
+}
+
+/* ========== Ticker Bar ========== */
+@keyframes ticker-vertical {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(-100%); }
+}
+
+.ticker-bar {
+  background: var(--footer-bg, var(--color-primary-600));
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  z-index: 5;
+  color: var(--footer-text, white);
+}
+
+.ticker-content {
+  display: flex;
+  gap: var(--space-24);
+  animation: ticker 40s linear infinite;
+  white-space: nowrap;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--footer-fs, 1.25rem);
+  font-weight: 700;
+  color: var(--footer-text, rgba(255,255,255,0.9));
+
+  i {
+    font-size: calc(var(--footer-fs, 1.25rem) * 1.2);
+  }
+
+  &.highlight {
+    color: var(--footer-text, white);
+    text-shadow: 0 0 10px rgba(255,255,255,0.3);
+  }
+}
+
+/* ========== Layout with Advertisement ========== */
+.tv-body-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+}
+
+.tv-wrapper.with-ad {
+  &[data-ad-pos="Right"] {
+    .tv-body-container { flex-direction: row; }
+    .ad-container { border-left: 8px solid var(--color-primary-100); }
+  }
+  &[data-ad-pos="Left"] {
+    .tv-body-container { flex-direction: row; } /* Ad is first in HTML, so row puts it on left */
+    .ad-container { border-right: 8px solid var(--color-primary-100); }
+  }
+  &[data-ad-pos="Top"] {
+    .ad-container { border-bottom: 8px solid var(--color-primary-100); }
+  }
+  &[data-ad-pos="Bottom"] {
+    .ad-container { border-top: 8px solid var(--color-primary-100); }
+  }
+}
+
+.ad-container {
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 100%; /* Default for Top/Bottom */
+  padding: var(--row-gap) var(--col-gap); /* Spacing for the ad content */
+
+  .video-wrapper {
+    width: 100%;
+    height: 100%;
+    iframe { width: 100%; height: 100%; }
+  }
+
+  .ad-fallback {
+    text-align: center;
+    padding: 3rem;
+    .brand-large {
+      i { font-size: 6rem; color: var(--color-primary-400); margin-bottom: 2rem; }
+      h2 { font-size: 3.5rem; margin-bottom: 1.5rem; color: white; font-weight: 900; }
+      p { font-size: 1.75rem; color: rgba(255,255,255,0.7); font-weight: 600; }
+    }
+  }
+}
+
+/* ========== Loading State ========== */
+.loading-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  z-index: 100;
+
+  .loading-spinner i {
+    font-size: 5rem;
+    color: var(--color-primary-600);
+  }
+
+  p {
+    font-size: 1.5rem;
+    color: var(--color-gray-500);
+    margin-top: 2rem;
+    font-weight: 700;
+  }
+}
+
+/* ========== Responsive for Large TV Screens ========== */
+@media (min-width: 1920px) {
+  .datetime-display .time {
+    font-size: var(--datetime-fs, 3.5rem);
+  }
+
+  .current-number {
+    font-size: var(--ticket-number-fs, 7rem);
+  }
+}
+
+@media (min-width: 2560px) {
+  .tv-header {
+    padding: var(--space-6) var(--space-12);
+  }
+
+  .tv-main {
+    padding: var(--space-8) var(--space-12);
+  }
+
+  .current-number {
+    font-size: var(--ticket-number-fs, 9rem);
+  }
+}
+
+/* ========== Small Screen Fallback ========== */
+@media (max-width: 768px) {
+  .tv-header {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
+
+  .header-right {
+    flex-direction: column;
+  }
+
+  .datetime-display {
+    align-items: center;
+  }
+
+  .rooms-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .current-number {
+    font-size: 3.5rem;
+  }
+}

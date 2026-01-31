@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "QMS Queue Management",
+  "version": "1.0.0",
+  "identifier": "com.qms.frontend",
+  "build": {
+    "frontendDist": "../dist/qms-frontend",
+    "devUrl": "http://localhost:4200"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "QMS - Quản lý hàng đợi",
+        "width": 1200,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "src/assets/favicon.ico"
+    ]
+  }
+}

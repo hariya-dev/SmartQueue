@@ -1,0 +1,125 @@
+<div class="tv-wrapper" 
+     [class.with-ad]="tvDisplay?.showAd" 
+     [attr.data-ad-pos]="tvDisplay?.adPosition"
+     [class.with-footer]="tvDisplay?.showFooter"
+     [attr.data-footer-pos]="tvDisplay?.footerPosition"
+     [ngStyle]="getLayoutStyles()">
+  
+  <!-- Header -->
+  <header class="tv-header" [style.height]="'var(--header-h)'">
+    <div class="header-left">
+      <img *ngIf="safeLogoUrl" [src]="safeLogoUrl" class="tv-logo" alt="Logo" />
+      <span *ngIf="!safeLogoUrl" class="brand-text">Queue Management System</span>
+    </div>
+    
+    <div class="datetime-display centered">
+      <div *ngIf="isConnectionLost" class="connection-warning">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Mất kết nối - Đang thử lại...</span>
+      </div>
+      <span *ngIf="!isConnectionLost" class="time">{{ currentTime | date:(tvDisplay?.timeFormat || 'HH:mm:ss') }}</span>
+    </div>
+
+    <div class="header-right">
+      <div class="connection-status">
+        <div class="connection-indicator" [class.connected]="isConnected">
+          <span class="indicator-dot"></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Advertisement Top -->
+  <aside class="ad-container ad-top" *ngIf="tvDisplay?.showAd && tvDisplay?.adPosition === 'Top'" 
+         [style.height]="'var(--ad-size)'">
+    <ng-container *ngTemplateOutlet="adTemplate"></ng-container>
+  </aside>
+
+  <div class="tv-body-container" [style.height]="'var(--body-h)'">
+    <!-- Advertisement Left -->
+    <aside class="ad-container ad-left" *ngIf="tvDisplay?.showAd && tvDisplay?.adPosition === 'Left'" 
+           [style.width]="'var(--ad-size)'">
+      <ng-container *ngTemplateOutlet="adTemplate"></ng-container>
+    </aside>
+
+    <!-- Main Display Area -->
+    <main class="tv-main" [style.height]="tvDisplay?.adPosition === 'Top' || tvDisplay?.adPosition === 'Bottom' ? 'var(--main-h)' : '100%'"
+          [style.width]="'var(--main-w)'">
+      <section class="rooms-section">
+        <div class="rooms-grid" 
+             [style.grid-template-columns]="'repeat(' + (tvDisplay?.columnsPerRow || 3) + ', 1fr)'"
+             [style.grid-template-rows]="'repeat(' + (tvDisplay?.rowsCount || 2) + ', 1fr)'"
+             [class.layout-horizontal]="tvDisplay?.layoutMode === 'Horizontal'">
+          
+          <ng-container *ngFor="let slot of gridSlots">
+            <div *ngIf="slot.roomId" 
+              class="room-panel"
+              [class.active]="getRoomData(slot.roomId)?.currentTicketNumber"
+              [class.blinking]="getRoomData(slot.roomId)?.isBlinking">
+              
+              <div class="room-minimal-content">
+                <div class="room-name">{{ getRoomData(slot.roomId)?.roomName }}</div>
+                <div class="current-number" [class.empty]="!getRoomData(slot.roomId)?.currentTicketNumber">
+                  {{ getRoomData(slot.roomId)?.currentTicketNumber || '---' }}
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="!slot.roomId" class="empty-slot"></div>
+          </ng-container>
+        </div>
+      </section>
+    </main>
+
+    <!-- Advertisement Right -->
+    <aside class="ad-container ad-right" *ngIf="tvDisplay?.showAd && tvDisplay?.adPosition === 'Right'" 
+           [style.width]="'var(--ad-size)'">
+      <ng-container *ngTemplateOutlet="adTemplate"></ng-container>
+    </aside>
+  </div>
+
+  <!-- Advertisement Bottom -->
+  <aside class="ad-container ad-bottom" *ngIf="tvDisplay?.showAd && tvDisplay?.adPosition === 'Bottom'" 
+         [style.height]="'var(--ad-size)'">
+    <ng-container *ngTemplateOutlet="adTemplate"></ng-container>
+  </aside>
+
+  <!-- Footer Ticker -->
+  <footer class="ticker-bar" *ngIf="tvDisplay?.showFooter" 
+          [attr.data-footer-pos]="tvDisplay?.footerPosition"
+          [style.height]="['Top', 'Bottom'].includes(tvDisplay?.footerPosition || '') ? 'var(--footer-h)' : 'auto'"
+          [style.width]="['Left', 'Right'].includes(tvDisplay?.footerPosition || '') ? 'var(--footer-h)' : '100%'">
+    <div class="ticker-content">
+      <div class="ticker-item highlight">
+        <i class="pi pi-megaphone"></i>
+        <span>{{ tvDisplay?.footerText || 'Vui lòng chú ý nghe gọi số và đến phòng khám đúng giờ' }}</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Ad Template Definition -->
+  <ng-template #adTemplate>
+    <div class="video-wrapper" *ngIf="currentAd">
+      <iframe *ngIf="currentAd.adType === 1" [src]="safeAdUrl" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              referrerpolicy="strict-origin-when-cross-origin" 
+              allowfullscreen></iframe>
+      
+      <video *ngIf="currentAd.adType === 0" [src]="getAdUrl(currentAd.url)" autoplay muted 
+             (ended)="currentAdIndex = (currentAdIndex + 1) % (tvDisplay?.advertisements?.length || 1); updateAdUrl()"></video>
+    </div>
+    <div class="ad-fallback" *ngIf="!currentAd">
+      <div class="brand-large">
+        <i class="pi pi-heart-fill"></i>
+        <h2>Bệnh Viện</h2>
+        <p>Tận tâm phục vụ</p>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- Audio for notifications -->
+  <audio #audioPlayer preload="auto">
+    <source src="assets/sounds/call.mp3" type="audio/mpeg">
+  </audio>
+</div>

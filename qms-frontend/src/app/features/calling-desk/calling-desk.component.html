@@ -1,0 +1,223 @@
+<div class="desk-wrapper" [class.compact-mode]="isCompactMode">
+  <!-- Main Content -->
+  <main class="desk-content" *ngIf="selectedRoom">
+    <div class="desk-grid">
+      <!-- Column 1: Control Panel -->
+      <section class="control-panel">
+        <div class="connection-warning-bar" *ngIf="isConnectionLost">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Mất kết nối - Đang thử lại...</span>
+        </div>
+
+        <div class="room-status-bar">
+          <div class="room-info">
+            <span class="room-name">{{ selectedRoom.roomCode }} - {{ selectedRoom.roomName }}</span>
+          </div>
+          <div class="connection-status" [class.connected]="isConnected">
+            <span class="status-dot"></span>
+          </div>
+        </div>
+        <div class="current-ticket-section">
+          <div class="section-header">
+            <h3>Số Đang Gọi</h3>
+          </div>
+          
+          <div class="mini-status" *ngIf="isCompactMode && queue.length > 0">
+            <div class="stat">
+              <i class="pi pi-users"></i>
+              <span>Đang chờ: <strong>{{ queue.length }}</strong></span>
+            </div>
+          </div>
+
+          <div class="current-ticket-card" *ngIf="currentTicket"
+            [class.priority]="currentTicket.priorityType === PriorityType.Priority"
+            [class.calling]="currentTicket.status === TicketStatus.Calling">
+            <div class="ticket-number">{{ currentTicket.ticketNumber }}</div>
+            <div class="ticket-service">{{ currentTicket.serviceName }}</div>
+          </div>
+
+          <div class="no-current-ticket" *ngIf="!currentTicket">
+            <i class="pi pi-minus-circle"></i>
+            <p>Trống</p>
+          </div>
+        </div>
+
+        <div class="actions-section">
+          <button class="call-btn next" (click)="callNext()" [disabled]="isLoading || !!currentTicket">
+            <i class="pi pi-forward"></i>
+            <span>Gọi số tiếp (F1)</span>
+          </button>
+          
+          <button class="call-btn recall" (click)="recall()" [disabled]="!currentTicket || isLoading">
+            <i class="pi pi-volume-up"></i>
+            <span>Gọi lại (F2)</span>
+          </button>
+          
+          <button class="call-btn pass" (click)="pass()" [disabled]="!currentTicket || isLoading">
+            <i class="pi pi-arrow-right"></i>
+            <span>Bỏ qua (F3)</span>
+          </button>
+          
+          <button class="call-btn done" (click)="done()" [disabled]="!currentTicket || isLoading">
+            <i class="pi pi-check"></i>
+            <span>Hoàn thành (F4)</span>
+          </button>
+
+          <button class="call-btn transfer" (click)="openTransfer()" [disabled]="!currentTicket || isLoading">
+            <i class="pi pi-send"></i>
+            <span>Chuyển số</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Column 2: Waiting Queue -->
+      <section class="queue-section">
+        <div class="section-header">
+          <h3>Hàng Chờ Đang Đợi</h3>
+          <span class="badge">{{ queue.length }}</span>
+        </div>
+        <div class="scroll-area">
+          <div *ngFor="let ticket of queue; let i = index" 
+            class="list-item"
+            [class.priority]="ticket.priorityType === PriorityType.Priority">
+            <div class="pos">{{ i + 1 }}</div>
+            <div class="num">{{ ticket.ticketNumber }}</div>
+            <div class="info">{{ ticket.serviceName }}</div>
+            <div class="time">{{ getWaitTime(ticket.issuedAt) }}</div>
+            <button pButton 
+              [icon]="ticket.priorityType === PriorityType.Priority ? 'pi pi-star-fill' : 'pi pi-star'" 
+              class="p-button-text p-button-sm star-btn"
+              [class.is-priority]="ticket.priorityType === PriorityType.Priority"
+              (click)="togglePriority(ticket)"
+              [pTooltip]="ticket.priorityType === PriorityType.Priority ? 'Bỏ ưu tiên' : 'Đánh dấu ưu tiên'"
+              tooltipPosition="left">
+            </button>
+          </div>
+          <div class="empty-list" *ngIf="queue.length === 0">
+            <p>Hàng chờ trống</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Column 3: History (Passed & Done) -->
+      <section class="history-section">
+        <!-- Passed Sub-section -->
+        <div class="history-block passed">
+          <div class="section-header">
+            <h3>Đã Bỏ Qua</h3>
+            <span class="badge warning">{{ passedTickets.length }}</span>
+          </div>
+          <div class="scroll-area">
+            <div *ngFor="let ticket of passedTickets" class="list-item">
+              <div class="num">{{ ticket.ticketNumber }}</div>
+              <div class="time">{{ ticket.completedAt | date:'HH:mm' }}</div>
+              <div class="item-actions">
+                <button pButton 
+                  [icon]="ticket.priorityType === PriorityType.Priority ? 'pi pi-star-fill' : 'pi pi-star'" 
+                  class="p-button-text p-button-sm star-btn"
+                  [class.is-priority]="ticket.priorityType === PriorityType.Priority"
+                  (click)="togglePriority(ticket)"
+                  pTooltip="Ưu tiên"
+                  tooltipPosition="left">
+                </button>
+                <button pButton icon="pi pi-replay" 
+                  class="p-button-text p-button-sm"
+                  (click)="returnToQueue(ticket)"
+                  pTooltip="Quay lại hàng chờ"
+                  tooltipPosition="left">
+                </button>
+              </div>
+            </div>
+            <div class="empty-list" *ngIf="passedTickets.length === 0">
+              <p>Không có số bỏ qua</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Done Sub-section -->
+        <div class="history-block done">
+          <div class="section-header">
+            <h3>Đã Hoàn Thành</h3>
+            <span class="badge success">{{ doneTickets.length }}</span>
+          </div>
+          <div class="scroll-area">
+            <div *ngFor="let ticket of doneTickets" class="list-item">
+              <div class="num">{{ ticket.ticketNumber }}</div>
+              <div class="time">{{ ticket.completedAt | date:'HH:mm' }}</div>
+              <div class="item-actions">
+                <button pButton 
+                  [icon]="ticket.priorityType === PriorityType.Priority ? 'pi pi-star-fill' : 'pi pi-star'" 
+                  class="p-button-text p-button-sm star-btn"
+                  [class.is-priority]="ticket.priorityType === PriorityType.Priority"
+                  (click)="togglePriority(ticket)"
+                  pTooltip="Ưu tiên"
+                  tooltipPosition="left">
+                </button>
+                <button pButton icon="pi pi-replay" 
+                  class="p-button-text p-button-sm"
+                  (click)="returnToQueue(ticket)"
+                  pTooltip="Quay lại hàng chờ"
+                  tooltipPosition="left">
+                </button>
+              </div>
+            </div>
+            <div class="empty-list" *ngIf="doneTickets.length === 0">
+              <p>Chưa có số hoàn thành</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Transfer Dialog (Custom Modal) -->
+  <div class="modal-backdrop" *ngIf="showTransferDialog" (click)="showTransferDialog = false">
+    <div class="transfer-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Chuyển số đi quầy khác</h3>
+        <button class="close-btn" (click)="showTransferDialog = false">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Chọn phòng/quầy muốn chuyển đến:</p>
+        <p-dropdown [options]="allRooms" 
+          [(ngModel)]="targetRoomId" 
+          optionLabel="roomName" 
+          optionValue="roomId"
+          placeholder="-- Chọn phòng --"
+          [filter]="true"
+          appendTo="body"
+          [style]="{'width': '100%'}">
+          <ng-template let-room pTemplate="item">
+            <div class="room-item">
+              <strong>{{ room.roomCode }}</strong> - {{ room.roomName }}
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
+      <div class="modal-footer">
+        <button pButton label="Hủy" class="p-button-text" (click)="showTransferDialog = false"></button>
+        <button pButton label="Chuyển" 
+          icon="pi pi-check" 
+          [disabled]="!targetRoomId || isLoading"
+          (click)="confirmTransfer()">
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Room Selected State -->
+  <div class="no-room-state" *ngIf="!selectedRoom">
+    <div class="no-room-content">
+      <i class="pi pi-lock"></i>
+      <h2>Truy cập bị hạn chế</h2>
+      <p>Tài khoản của bạn chưa được gán phòng làm việc. Vui lòng liên hệ quản trị viên.</p>
+    </div>
+  </div>
+
+  <!-- Compact Mode Toggle Button -->
+  <button class="compact-toggle" (click)="toggleCompactMode()" [pTooltip]="isCompactMode ? 'Mở rộng' : 'Thu nhỏ'" tooltipPosition="left">
+    <i class="pi" [class.pi-expand]="isCompactMode" [class.pi-minus]="!isCompactMode"></i>
+  </button>
+</div>

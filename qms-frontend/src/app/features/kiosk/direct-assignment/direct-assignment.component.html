@@ -1,0 +1,210 @@
+<div class="kiosk-wrapper">
+  <!-- Background Pattern -->
+  <div class="kiosk-bg-pattern"></div>
+  
+  <!-- Main Container -->
+  <div class="kiosk-container">
+    <div class="kiosk-sub-header">
+      <button pButton icon="pi pi-arrow-left" label="QUAY LẠI" routerLink="/kiosk" class="p-button-text p-button-secondary"></button>
+    </div>
+
+    <main class="kiosk-main direct-room-layout">
+      <!-- Step 1: Select Service (Replicating Auto Tab) -->
+      <section class="services-panel">
+        <div class="panel-header">
+          <h2><i class="pi pi-list"></i> 1. Chọn Dịch Vụ</h2>
+        </div>
+        <div class="services-list">
+          <button 
+            *ngFor="let service of services"
+            (click)="selectService(service)"
+            class="service-item"
+            [class.selected]="selectedService?.serviceId === service.serviceId">
+            <div class="service-icon" [attr.data-code]="service.serviceCode">
+              <i [class]="getServiceIcon(service.serviceCode)"></i>
+            </div>
+            <div class="service-info">
+              <h3>{{ service.serviceName }}</h3>
+              <span class="service-meta">
+                <i class="pi pi-building"></i> {{ service.roomCount }} phòng
+              </span>
+            </div>
+            <div class="service-check" *ngIf="selectedService?.serviceId === service.serviceId">
+              <i class="pi pi-check"></i>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Step 2: Select Room (Center Panel) -->
+      <section class="rooms-panel">
+        <div class="panel-header">
+          <h2><i class="pi pi-building"></i> 2. Chọn Phòng</h2>
+        </div>
+        <div class="rooms-grid-container">
+          
+          <div class="rooms-grid" *ngIf="selectedService">
+            <button 
+              *ngFor="let room of rooms"
+              (click)="selectRoom(room)"
+              class="room-item"
+              [class.selected]="selectedRoom?.roomId === room.roomId">
+              <span class="room-code">{{ room.roomCode }}</span>
+              <span class="room-name">{{ room.roomName }}</span>
+              <div class="queue-mini">
+                <i class="pi pi-users"></i> {{ room.currentQueueSize }}
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Priority & Action (Right Panel) -->
+      <section class="action-panel">
+        <div class="priority-section">
+          <div class="panel-header">
+            <h2><i class="pi pi-users"></i> 3. Loại</h2>
+          </div>
+          <div class="priority-buttons">
+            <button 
+              (click)="selectPriority(PriorityType.Normal)"
+              class="priority-btn normal"
+              [class.selected]="selectedPriority === PriorityType.Normal">
+              <div class="priority-icon">
+                <i class="pi pi-user"></i>
+              </div>
+              <div class="priority-text">
+                <span class="priority-title">Thường</span>
+                <span class="priority-desc">Khám thông thường</span>
+              </div>
+            </button>
+            
+            <button 
+              (click)="selectPriority(PriorityType.Priority)"
+              class="priority-btn priority"
+              [class.selected]="selectedPriority === PriorityType.Priority">
+              <div class="priority-icon">
+                <i class="pi pi-star-fill"></i>
+              </div>
+              <div class="priority-text">
+                <span class="priority-title">Ưu Tiên</span>
+                <span class="priority-desc">Người già, trẻ em, bà bầu</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="issue-section">
+          <button 
+            class="issue-btn"
+            (click)="issueTicket()"
+            [disabled]="!selectedService || !selectedRoom || selectedPriority === null || isLoading"
+            [class.ready]="selectedService && selectedRoom && selectedPriority !== null">
+            <div class="issue-btn-content" *ngIf="!isLoading">
+              <i class="pi pi-ticket"></i>
+              <span class="issue-btn-text">LẤY SỐ</span>
+              <span class="issue-btn-hint" *ngIf="selectedRoom">Vào phòng {{selectedRoom.roomCode}}</span>
+              <span class="issue-btn-hint" *ngIf="!selectedRoom">Chưa chọn phòng</span>
+            </div>
+            <div class="issue-btn-content" *ngIf="isLoading">
+              <i class="pi pi-spin pi-spinner"></i>
+              <span class="issue-btn-text">ĐANG XỬ LÝ...</span>
+            </div>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="kiosk-footer">
+      <p><i class="pi pi-info-circle"></i> Chỉ định phòng khám trực tiếp vào hệ thống</p>
+    </footer>
+  </div>
+
+  <!-- Ticket Result Dialog (Identical to Kiosk) -->
+  <p-dialog 
+    [(visible)]="showTicketDialog" 
+    [modal]="true" 
+    [closable]="false"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{width: '500px'}"
+    styleClass="ticket-dialog">
+    
+    <ng-template pTemplate="header">
+      <div class="dialog-header-custom">
+        <div class="success-icon">
+          <i class="pi pi-check"></i>
+        </div>
+        <h2>Lấy số thành công!</h2>
+      </div>
+    </ng-template>
+    
+    <div *ngIf="ticketResult" class="ticket-result">
+      <div class="ticket-display" [class.priority]="ticketResult.priorityType === PriorityType.Priority">
+        <span class="ticket-label">SỐ CỦA BẠN</span>
+        <span class="ticket-number">{{ ticketResult.ticketNumber }}</span>
+        <span class="ticket-type">{{ ticketResult.priorityType === PriorityType.Priority ? 'ƯU TIÊN' : 'THƯỜNG' }}</span>
+      </div>
+      
+      <div class="ticket-details">
+        <div class="detail-row">
+          <div class="detail-item">
+            <i class="pi pi-briefcase"></i>
+            <div>
+              <span class="detail-label">Dịch vụ</span>
+              <span class="detail-value">{{ ticketResult.serviceName }}</span>
+            </div>
+          </div>
+          <div class="detail-item">
+            <i class="pi pi-building"></i>
+            <div>
+              <span class="detail-label">Phòng</span>
+              <span class="detail-value">{{ ticketResult.roomCode }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="print-instruction">
+        <i class="pi pi-print"></i>
+        <p>Vui lòng Lấy phiếu in tại máy</p>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button class="btn-close-ticket" (click)="resetKiosk()">
+        <span>HOÀN TẤT</span>
+        <span class="countdown">({{ autoCloseCountdown }}s)</span>
+      </button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Error Dialog -->
+  <p-dialog 
+    [(visible)]="showErrorDialog" 
+    [modal]="true" 
+    [closable]="false"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{width: '450px'}"
+    styleClass="error-dialog">
+    
+    <ng-template pTemplate="header">
+      <div class="dialog-header-custom error">
+        <div class="error-icon">
+          <i class="pi pi-exclamation-triangle"></i>
+        </div>
+        <h2>Thông báo lỗi</h2>
+      </div>
+    </ng-template>
+    
+    <div class="error-content">
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button pButton label="ĐÓNG" class="p-button-danger p-button-text" (click)="showErrorDialog = false"></button>
+    </ng-template>
+  </p-dialog>
+</div>

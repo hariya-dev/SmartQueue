@@ -1,0 +1,280 @@
+<div class="kiosk-wrapper">
+  <!-- Background Pattern -->
+  <div class="kiosk-bg-pattern"></div>
+  
+  <!-- Main Container -->
+  <div class="kiosk-container">
+    <div class="kiosk-sub-header">
+      <div class="kiosk-nav-buttons">
+        <button pButton icon="pi pi-building" label="CHỈ ĐỊNH PHÒNG" routerLink="/kiosk/direct-assignment" class="p-button-outlined p-button-sm mr-2"></button>
+        <button pButton icon="pi pi-chart-bar" label="CHI TIẾT HÀNG CHỜ" routerLink="/kiosk/queue-status" class="p-button-outlined p-button-sm"></button>
+      </div>
+    </div>
+
+    <main class="kiosk-main">
+      <!-- Left Panel: Services -->
+      <section class="services-panel">
+        <div class="panel-header">
+          <h2><i class="pi pi-list"></i> Chọn Dịch Vụ</h2>
+        </div>
+        <div class="services-list">
+          <button 
+            *ngFor="let service of services"
+            (click)="selectService(service)"
+            class="service-item"
+            [class.selected]="selectedService?.serviceId === service.serviceId">
+            <div class="service-icon" [attr.data-code]="service.serviceCode">
+              <i [class]="getServiceIcon(service.serviceCode)"></i>
+            </div>
+            <div class="service-info">
+              <h3>{{ service.serviceName }}</h3>
+              <span class="service-meta">
+                <i class="pi pi-building"></i> {{ service.roomCount }} phòng
+              </span>
+            </div>
+            <div class="service-check" *ngIf="selectedService?.serviceId === service.serviceId">
+              <i class="pi pi-check"></i>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Panel: Priority & Action -->
+      <section class="action-panel">
+        <!-- Priority Selection -->
+        <div class="priority-section">
+          <div class="panel-header">
+            <h2><i class="pi pi-users"></i> Chọn Loại</h2>
+          </div>
+          <div class="priority-buttons">
+            <button 
+              (click)="selectPriority(PriorityType.Normal)"
+              class="priority-btn normal"
+              [class.selected]="selectedPriority === PriorityType.Normal">
+              <div class="priority-icon">
+                <i class="pi pi-user"></i>
+              </div>
+              <div class="priority-text">
+                <span class="priority-title">Thường</span>
+                <span class="priority-desc">Khám thông thường</span>
+              </div>
+            </button>
+            
+            <button 
+              (click)="selectPriority(PriorityType.Priority)"
+              class="priority-btn priority"
+              [class.selected]="selectedPriority === PriorityType.Priority">
+              <div class="priority-icon">
+                <i class="pi pi-star-fill"></i>
+              </div>
+              <div class="priority-text">
+                <span class="priority-title">Ưu Tiên</span>
+                <span class="priority-desc">Người già, trẻ em, bà bầu</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+
+        <!-- Issue Button -->
+        <div class="issue-section">
+          <button 
+            class="issue-btn"
+            (click)="issueTicket()"
+            [disabled]="!selectedService || selectedPriority === null || isLoading"
+            [class.ready]="selectedService && selectedPriority !== null">
+            <div class="issue-btn-content" *ngIf="!isLoading">
+              <i class="pi pi-ticket"></i>
+              <span class="issue-btn-text">LẤY SỐ</span>
+              <span class="issue-btn-hint" *ngIf="!selectedService">Vui lòng chọn dịch vụ</span>
+              <span class="issue-btn-hint" *ngIf="selectedService && selectedPriority === null">Vui lòng chọn loại ưu tiên</span>
+            </div>
+            <div class="issue-btn-content" *ngIf="isLoading">
+              <i class="pi pi-spin pi-spinner"></i>
+              <span class="issue-btn-text">ĐANG XỬ LÝ...</span>
+            </div>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="kiosk-footer">
+      <p><i class="pi pi-info-circle"></i> Nếu cần hỗ trợ, vui lòng liên hệ nhân viên y tế</p>
+      <button class="history-btn" (click)="openPrintHistoryDialog()" pTooltip="Lịch sử in ấn">
+        <i class="pi pi-history"></i>
+      </button>
+    </footer>
+  </div>
+
+  <!-- Ticket Result Dialog -->
+  <p-dialog 
+    [(visible)]="showTicketDialog" 
+    [modal]="true" 
+    [closable]="false"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{width: '500px'}"
+    styleClass="ticket-dialog">
+    
+    <ng-template pTemplate="header">
+      <div class="dialog-header-custom">
+        <div class="success-icon">
+          <i class="pi pi-check"></i>
+        </div>
+        <h2>Lấy số thành công!</h2>
+      </div>
+    </ng-template>
+    
+    <div *ngIf="ticketResult" class="ticket-result">
+      <div class="ticket-display" [class.priority]="ticketResult.priorityType === PriorityType.Priority">
+        <span class="ticket-label">SỐ CỦA BẠN</span>
+        <span class="ticket-number">{{ ticketResult.ticketNumber }}</span>
+        <span class="ticket-type">{{ ticketResult.priorityType === PriorityType.Priority ? 'ƯU TIÊN' : 'THƯỜNG' }}</span>
+      </div>
+      
+      <div class="ticket-details">
+        <div class="detail-row">
+          <div class="detail-item">
+            <i class="pi pi-briefcase"></i>
+            <div>
+              <span class="detail-label">Dịch vụ</span>
+              <span class="detail-value">{{ ticketResult.serviceName }}</span>
+            </div>
+          </div>
+          <div class="detail-item">
+            <i class="pi pi-building"></i>
+            <div>
+              <span class="detail-label">Phòng</span>
+              <span class="detail-value">{{ ticketResult.roomCode }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-item">
+            <i class="pi pi-users"></i>
+            <div>
+              <span class="detail-label">Vị trí trong hàng</span>
+              <span class="detail-value highlight">{{ ticketResult.queuePosition }}</span>
+            </div>
+          </div>
+          <div class="detail-item">
+            <i class="pi pi-clock"></i>
+            <div>
+              <span class="detail-label">Thời gian chờ</span>
+              <span class="detail-value">~ {{ ticketResult.estimatedWaitMinutes }} phút</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ticket-notice">
+        <i class="pi pi-volume-up"></i>
+        <p>Vui lòng chú ý nghe gọi số tại khu vực chờ</p>
+      </div>
+      
+      <div class="print-instruction">
+        <i class="pi pi-print"></i>
+        <p>Vui lòng Lấy phiếu in tại máy</p>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button class="btn-close-ticket" (click)="resetKiosk()">
+        <span>HOÀN TẤT</span>
+        <span class="countdown">({{ autoCloseCountdown }}s)</span>
+      </button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Error Dialog -->
+  <p-dialog 
+    [(visible)]="showErrorDialog" 
+    [modal]="true" 
+    [closable]="false"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{width: '450px'}"
+    styleClass="error-dialog">
+    
+    <ng-template pTemplate="header">
+      <div class="dialog-header-custom error">
+        <div class="error-icon">
+          <i class="pi pi-exclamation-triangle"></i>
+        </div>
+        <h2>Thông báo lỗi</h2>
+      </div>
+    </ng-template>
+    
+    <div class="error-content">
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button pButton label="ĐÓNG" class="p-button-danger p-button-text" (click)="showErrorDialog = false"></button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Print History Dialog -->
+  <p-dialog header="Lịch Sử In Ấn" [(visible)]="showPrintHistoryDialog" 
+    [modal]="true" [style]="{width: '900px'}" [maximizable]="true"
+    [closable]="true" [draggable]="false">
+    <div class="print-history-filters">
+      <div class="filter-content">
+        <span class="p-input-icon-left search-input-wrapper">
+          <input type="text" pInputText [(ngModel)]="searchTicketNumber" 
+            (ngModelChange)="onSearchChange()" placeholder="Nhập mã phiếu gọi để tìm kiếm..." class="search-input" />
+        </span>
+      </div>
+    </div>
+
+    <div class="print-history-table">
+      <p-table [value]="filteredPrintHistory" [paginator]="true" 
+        [rows]="10" [showCurrentPageReport]="true"
+        currentPageReportTemplate="Hiển thị {first} - {last} / {totalRecords} bản ghi"
+        [rowsPerPageOptions]="[10, 25, 50]" [loading]="printHistoryLoading"
+        [globalFilterFields]="['ticketNumber', 'printerName']"
+        styleClass="p-datatable-sm p-datatable-striped">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 60px">STT</th>
+            <th pSortableColumn="ticketNumber" style="width: 120px">Số Phiếu <p-sortIcon field="ticketNumber"></p-sortIcon></th>
+            <th style="width: 180px">Máy In</th>
+            <th pSortableColumn="printStatus" style="width: 120px">Trạng Thái <p-sortIcon field="printStatus"></p-sortIcon></th>
+            <th pSortableColumn="printedAt" style="width: 160px">Thời Gian <p-sortIcon field="printedAt"></p-sortIcon></th>
+            <th style="width: 80px">Thao Tác</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item let-i="rowIndex">
+          <tr>
+            <td>{{ i + 1 }}</td>
+            <td><strong>{{ item.ticketNumber }}</strong></td>
+            <td>{{ item.printerName || '-' }}</td>
+            <td>
+              <p-tag [value]="getPrintStatusLabel(item.printStatus)" 
+                [severity]="getPrintStatusSeverity(item.printStatus)"></p-tag>
+            </td>
+            <td>{{ item.printedAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+            <td>
+              <button pButton icon="pi pi-print" class="p-button-rounded p-button-text p-button-sm"
+                pTooltip="In lại" tooltipPosition="top"
+                [disabled]="getPrintStatusSeverity(item.printStatus) === 'danger'"
+                (click)="reprintTicket(item)"></button>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" class="text-center">
+              <i class="pi pi-inbox" style="font-size: 2rem; color: #aaa;"></i>
+              <p style="margin-top: 10px; color: #aaa;">Không có dữ liệu lịch sử in ấn</p>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </p-dialog>
+
+  <!-- Confirm Dialog -->
+  <p-confirmDialog></p-confirmDialog>
+</div>
