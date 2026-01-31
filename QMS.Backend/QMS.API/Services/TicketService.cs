@@ -75,24 +75,24 @@ public class TicketService : ITicketService
         var now = DateTime.Now;
         var currentTime = now.TimeOfDay;
         var currentDay = now.DayOfWeek;
-
+        
         var activeSessions = await _context.WorkingSessions
             .Where(s => s.IsActive)
             .ToListAsync();
-
+        
         if (activeSessions.Any())
         {
             var isWithinSession = activeSessions.Any(s => 
                 (s.DayOfWeek == null || s.DayOfWeek == currentDay) && 
                 currentTime >= s.StartTime && 
-                currentTime <= s.EndTime);
-
+                currentTime < s.EndTime);
+        
             if (!isWithinSession)
             {
                 var sessionInfo = string.Join(", ", activeSessions
                     .Where(s => s.DayOfWeek == null || s.DayOfWeek == currentDay)
                     .Select(s => $"{s.StartTime:hh\\:mm} - {s.EndTime:hh\\:mm}"));
-                
+                        
                 throw new InvalidOperationException($"Hiện tại không phải thời gian lấy số. Vui lòng quay lại vào các khung giờ: {sessionInfo}");
             }
         }
