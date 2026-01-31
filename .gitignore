@@ -1,0 +1,49 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm64/
+[Aa]rm/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Oo]ut/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.suo
+
+# Backend
+QMS.Backend/.vs/
+QMS.Backend/*/bin/
+QMS.Backend/*/obj/
+QMS.Backend/*.user
+QMS.Backend/*.suo
+
+# Frontend
+qms-frontend/node_modules/
+qms-frontend/dist/
+qms-frontend/.angular/
+qms-frontend/coverage/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+*.local
